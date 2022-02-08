@@ -5,11 +5,22 @@ const io = require('socket.io')(http)
 
 const PORT = process.env.PORT || 3333
 
+
+const SerialPort = require('serialport')
+const Readline = SerialPort.parsers.Readline
+const port = new SerialPort('COM5'),
+baudRate=500;
+const parser = new Readline()
+port.pipe(parser)
+//parser.on('serialdata', console.log);
+
+
 http.listen(PORT, ()=>{
     console.log(`listening on port ${PORT}`);
 })
 
 app.use( express.static( 'public' ))
+
 
 io.on('connection', (socket)=>{
     console.log(`Socket ID: ${socket.id}`)
@@ -18,12 +29,18 @@ io.on('connection', (socket)=>{
     socket.on("Request_Sequences", ()=>{
         io.emit('Request_Sequences_Ppro')
     })
-    socket.on("Render_Seq", (data)=>{
-        io.emit('Render_Seq_Ppro', data)
-    })
 
     // From Premier to WEB
-    socket.on("Sequence_List", (data)=>{
-        io.emit('Update_Sequence_List', data)
-    })
+/*
+    parser.on('data', function (data) {
+        io.emit('data', { data: data });
+        console.log (data);
+    });
+*/
+    parser.on('data', function (data) {
+        str = JSON.parse(data); //Then parse it
+        console.log(str);
+        io.emit('parsed-data', str);
+      });
+    
 })
